@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,18 @@ import {
   ScrollView,
   Alert,
   Dimensions,
+  StatusBar,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
+  // State
   const [isConnected, setIsConnected] = useState(false);
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [currentLocation, setCurrentLocation] = useState('Searching for location...');
@@ -22,7 +27,76 @@ export default function HomeScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [directions, setDirections] = useState([]);
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const logoRotateAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const statusPulseAnim = useRef(new Animated.Value(1)).current;
+  
+  // Button animation values
+  const connectButtonScale = useRef(new Animated.Value(1)).current;
+  const navButtonScale = useRef(new Animated.Value(1)).current;
+  const quickActionScales = useRef([
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1)
+  ]).current;
+
+  // Input focus animation
+  const inputFocusAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    // Entrance animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Logo rotation animation
+    Animated.loop(
+      Animated.timing(logoRotateAnim, {
+        toValue: 1,
+        duration: 15000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Pulse animation for status indicator
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(statusPulseAnim, {
+          toValue: 1.2,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(statusPulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     // Simulate real-time location updates
     const locationInterval = setInterval(() => {
       setCurrentLocation('123 Main Street, Downtown');
@@ -38,6 +112,43 @@ export default function HomeScreen() {
       clearInterval(batteryInterval);
     };
   }, []);
+
+  // Animation helper functions
+  const createHoverAnimation = (animValue, toValue = 1.05) => ({
+    onPressIn: () => {
+      Animated.spring(animValue, {
+        toValue,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 4,
+      }).start();
+    },
+    onPressOut: () => {
+      Animated.spring(animValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 4,
+      }).start();
+    },
+  });
+
+  const createInputFocusAnimation = () => ({
+    onFocus: () => {
+      Animated.timing(inputFocusAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    },
+    onBlur: () => {
+      Animated.timing(inputFocusAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    },
+  });
 
   const startNavigation = () => {
     if (!destination.trim()) {
@@ -81,161 +192,371 @@ export default function HomeScreen() {
     }
   };
 
+  const logoRotate = logoRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const inputBorderColor = inputFocusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(102, 126, 234, 0.3)', 'rgba(102, 126, 234, 0.8)'],
+  });
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <LinearGradient
-        colors={['#3B82F6', '#1E40AF']}
-        style={styles.header}
+        colors={['#667eea', '#764ba2', '#f093fb']}
+        style={styles.container}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <View style={styles.statusBar}>
-          <View style={styles.appTitle}>
-            <Text style={styles.appTitleText}>SoleMate</Text>
-            <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10B981' : '#EF4444' }]} />
-          </View>
-          
-          <View style={styles.statusInfo}>
-            <View style={styles.batteryInfo}>
-              <Ionicons name="battery-half" size={16} color="#FFFFFF" />
-              <Text style={styles.batteryText}>{batteryLevel}%</Text>
-            </View>
-          </View>
+        {/* Animated Background Elements */}
+        <View style={styles.backgroundElements}>
+          <Animated.View style={[styles.floatingElement, styles.element1, {
+            transform: [{ rotate: logoRotate }]
+          }]} />
+          <Animated.View style={[styles.floatingElement, styles.element2, {
+            transform: [{ rotate: logoRotate }]
+          }]} />
+          <Animated.View style={[styles.floatingElement, styles.element3, {
+            transform: [{ rotate: logoRotate }]
+          }]} />
         </View>
 
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Welcome to SoleMate</Text>
-          <Text style={styles.welcomeSubtitle}>Your smart navigation companion</Text>
-        </View>
-      </LinearGradient>
-
-      <View style={styles.content}>
-        {/* Connection Status */}
-        <View style={[styles.card, styles.connectionCard, {
-          backgroundColor: isConnected ? '#ECFDF5' : '#FEF2F2',
-          borderColor: isConnected ? '#10B981' : '#EF4444'
-        }]}>
-          <View style={styles.connectionStatus}>
-            <View style={[styles.connectionDot, { backgroundColor: isConnected ? '#10B981' : '#EF4444' }]} />
-            <Text style={[styles.connectionText, { color: isConnected ? '#065F46' : '#991B1B' }]}>
-              {isConnected ? 'SoleMate Device Connected' : 'Device Not Connected'}
-            </Text>
-          </View>
-          {!isConnected && (
-            <TouchableOpacity 
-              style={styles.connectButton}
-              onPress={() => setIsConnected(true)}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <Animated.View style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}>
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+              style={styles.headerGradient}
             >
-              <Text style={styles.connectButtonText}>Connect</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Current Location */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="location" size={20} color="#3B82F6" />
-            <Text style={styles.cardTitle}>Current Location</Text>
-          </View>
-          <Text style={styles.locationText}>{currentLocation}</Text>
-        </View>
-
-        {/* Navigation Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Navigation</Text>
-          
-          <View style={styles.inputContainer}>
-            <Ionicons name="search" size={20} color="#9CA3AF" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Where would you like to go?"
-              value={destination}
-              onChangeText={setDestination}
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-          
-          <TouchableOpacity
-            style={[styles.navigationButton, {
-              backgroundColor: isConnected ? '#3B82F6' : '#9CA3AF'
-            }]}
-            onPress={isNavigating ? stopNavigation : startNavigation}
-            disabled={!isConnected && !isNavigating}
-          >
-            <Ionicons 
-              name={isNavigating ? 'stop' : 'navigate'} 
-              size={20} 
-              color="#FFFFFF" 
-              style={styles.buttonIcon} 
-            />
-            <Text style={styles.navigationButtonText}>
-              {isNavigating ? 'Stop Navigation' : 'Start Navigation'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Directions */}
-          {isNavigating && directions.length > 0 && (
-            <View style={styles.directionsContainer}>
-              <Text style={styles.directionsTitle}>Current Directions</Text>
-              {directions.map((direction, index) => (
-                <View key={index} style={styles.directionItem}>
-                  <Text style={styles.directionNumber}>{index + 1}</Text>
-                  <Text style={styles.directionText}>{direction}</Text>
+              <View style={styles.statusBar}>
+                <View style={styles.appTitle}>
+                  <Animated.View style={[
+                    styles.logoIconContainer,
+                    { transform: [{ rotate: logoRotate }] }
+                  ]}>
+                    <LinearGradient
+                      colors={['#FF6B6B', '#4ECDC4']}
+                      style={styles.logoGradient}
+                    >
+                      <Ionicons name="walk" size={24} color="#fff" />
+                    </LinearGradient>
+                  </Animated.View>
+                  <View style={styles.titleContainer}>
+                    <Text style={styles.appTitleText}>SoleMate</Text>
+                    <Animated.View style={[
+                      styles.statusDot, 
+                      { 
+                        backgroundColor: isConnected ? '#10B981' : '#EF4444',
+                        transform: [{ scale: statusPulseAnim }]
+                      }
+                    ]} />
+                  </View>
                 </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={() => quickAction('voice')}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#10B981' }]}>
-                <Ionicons name="volume-high" size={24} color="#FFFFFF" />
+                
+                <View style={styles.statusInfo}>
+                  <LinearGradient
+                    colors={['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.1)']}
+                    style={styles.batteryContainer}
+                  >
+                    <Ionicons name="battery-half" size={16} color="#FFFFFF" />
+                    <Text style={styles.batteryText}>{batteryLevel}%</Text>
+                  </LinearGradient>
+                </View>
               </View>
-              <Text style={styles.quickActionText}>Voice Guide</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={() => quickAction('detection')}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF6' }]}>
-                <Ionicons name="eye" size={24} color="#FFFFFF" />
+              <View style={styles.welcomeSection}>
+                <Text style={styles.welcomeTitle}>Welcome Back</Text>
+                <Text style={styles.welcomeSubtitle}>Ready for your next journey?</Text>
               </View>
-              <Text style={styles.quickActionText}>Detect Objects</Text>
-            </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
 
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={() => quickAction('location')}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B' }]}>
-                <Ionicons name="location-sharp" size={24} color="#FFFFFF" />
+          {/* Connection Status Card */}
+          <Animated.View style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={[styles.card, styles.connectionCard, {
+                backgroundColor: isConnected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                borderColor: isConnected ? '#10B981' : '#EF4444'
+              }]}>
+                <View style={styles.connectionStatus}>
+                  <Animated.View style={[
+                    styles.connectionDot, 
+                    { 
+                      backgroundColor: isConnected ? '#10B981' : '#EF4444',
+                      transform: [{ scale: statusPulseAnim }]
+                    }
+                  ]} />
+                  <Text style={[styles.connectionText, { color: isConnected ? '#065F46' : '#991B1B' }]}>
+                    {isConnected ? 'SoleMate Device Connected' : 'Device Not Connected'}
+                  </Text>
+                </View>
+                {!isConnected && (
+                  <Animated.View style={[{ transform: [{ scale: connectButtonScale }] }]}>
+                    <TouchableOpacity 
+                      style={styles.connectButton}
+                      onPress={() => setIsConnected(true)}
+                      activeOpacity={0.8}
+                      {...createHoverAnimation(connectButtonScale)}
+                    >
+                      <LinearGradient
+                        colors={['#667eea', '#764ba2']}
+                        style={styles.connectButtonGradient}
+                      >
+                        <Text style={styles.connectButtonText}>Connect</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </Animated.View>
+                )}
               </View>
-              <Text style={styles.quickActionText}>My Location</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+            </BlurView>
+          </Animated.View>
+
+          {/* Location Card */}
+          <Animated.View style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    style={styles.iconGradient}
+                  >
+                    <Ionicons name="location" size={16} color="#fff" />
+                  </LinearGradient>
+                  <Text style={styles.cardTitle}>Current Location</Text>
+                </View>
+                <Text style={styles.locationText}>{currentLocation}</Text>
+              </View>
+            </BlurView>
+          </Animated.View>
+
+          {/* Navigation Card */}
+          <Animated.View style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    style={styles.iconGradient}
+                  >
+                    <Ionicons name="navigate" size={16} color="#fff" />
+                  </LinearGradient>
+                  <Text style={styles.cardTitle}>Navigation</Text>
+                </View>
+                
+                <Animated.View style={[
+                  styles.inputWrapper,
+                  { borderColor: inputBorderColor }
+                ]}>
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    style={styles.inputIconGradient}
+                  >
+                    <Ionicons name="search" size={16} color="#fff" />
+                  </LinearGradient>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Where would you like to go?"
+                    value={destination}
+                    onChangeText={setDestination}
+                    placeholderTextColor="#999"
+                    {...createInputFocusAnimation()}
+                  />
+                </Animated.View>
+                
+                <Animated.View style={[{ transform: [{ scale: navButtonScale }] }]}>
+                  <TouchableOpacity
+                    style={styles.navigationButton}
+                    onPress={isNavigating ? stopNavigation : startNavigation}
+                    disabled={!isConnected && !isNavigating}
+                    activeOpacity={0.8}
+                    {...createHoverAnimation(navButtonScale)}
+                  >
+                    <LinearGradient
+                      colors={isConnected || isNavigating ? ['#667eea', '#764ba2'] : ['#ccc', '#ccc']}
+                      style={styles.navigationButtonGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Ionicons 
+                        name={isNavigating ? 'stop' : 'navigate'} 
+                        size={18} 
+                        color="#FFFFFF" 
+                      />
+                      <Text style={styles.navigationButtonText}>
+                        {isNavigating ? 'Stop Navigation' : 'Start Navigation'}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+
+                {/* Directions */}
+                {isNavigating && directions.length > 0 && (
+                  <View style={styles.directionsContainer}>
+                    <LinearGradient
+                      colors={['rgba(102, 126, 234, 0.1)', 'rgba(118, 75, 162, 0.1)']}
+                      style={styles.directionsGradient}
+                    >
+                      <Text style={styles.directionsTitle}>Current Directions</Text>
+                      {directions.map((direction, index) => (
+                        <View key={index} style={styles.directionItem}>
+                          <LinearGradient
+                            colors={['#667eea', '#764ba2']}
+                            style={styles.directionNumber}
+                          >
+                            <Text style={styles.directionNumberText}>{index + 1}</Text>
+                          </LinearGradient>
+                          <Text style={styles.directionText}>{direction}</Text>
+                        </View>
+                      ))}
+                    </LinearGradient>
+                  </View>
+                )}
+              </View>
+            </BlurView>
+          </Animated.View>
+
+          {/* Quick Actions Card */}
+          <Animated.View style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    style={styles.iconGradient}
+                  >
+                    <Ionicons name="flash" size={16} color="#fff" />
+                  </LinearGradient>
+                  <Text style={styles.cardTitle}>Quick Actions</Text>
+                </View>
+                <View style={styles.quickActions}>
+                  {[
+                    { icon: 'volume-high', text: 'Voice Guide', action: 'voice', colors: ['#10B981', '#059669'] },
+                    { icon: 'eye', text: 'Detect Objects', action: 'detection', colors: ['#8B5CF6', '#7C3AED'] },
+                    { icon: 'location-sharp', text: 'My Location', action: 'location', colors: ['#F59E0B', '#D97706'] }
+                  ].map((item, index) => (
+                    <Animated.View 
+                      key={index}
+                      style={[{ transform: [{ scale: quickActionScales[index] }] }]}
+                    >
+                      <TouchableOpacity 
+                        style={styles.quickActionButton}
+                        onPress={() => quickAction(item.action)}
+                        activeOpacity={0.8}
+                        {...createHoverAnimation(quickActionScales[index], 1.1)}
+                      >
+                        <LinearGradient
+                          colors={item.colors}
+                          style={styles.quickActionIcon}
+                        >
+                          <Ionicons name={item.icon} size={24} color="#FFFFFF" />
+                        </LinearGradient>
+                        <Text style={styles.quickActionText}>{item.text}</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  ))}
+                </View>
+              </View>
+            </BlurView>
+          </Animated.View>
+        </ScrollView>
+      </LinearGradient>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+  },
+  backgroundElements: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  floatingElement: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 100,
+  },
+  element1: {
+    width: 150,
+    height: 150,
+    top: -75,
+    right: -75,
+  },
+  element2: {
+    width: 120,
+    height: 120,
+    bottom: 80,
+    left: -60,
+  },
+  element3: {
+    width: 80,
+    height: 80,
+    top: '40%',
+    right: -40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    paddingVertical: 15,
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    marginHorizontal: 20,
+    marginTop: 50,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  headerGradient: {
+    padding: 25,
+    borderRadius: 16,
   },
   statusBar: {
     flexDirection: 'row',
@@ -247,11 +568,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  logoIconContainer: {
+    marginRight: 12,
+  },
+  logoGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   appTitleText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#fff',
     marginRight: 8,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
   statusDot: {
     width: 8,
@@ -262,47 +606,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  batteryInfo: {
+  batteryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   batteryText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '600',
     marginLeft: 4,
   },
   welcomeSection: {
     alignItems: 'center',
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
   welcomeSubtitle: {
-    fontSize: 16,
-    color: '#BFDBFE',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 4,
+    fontWeight: '500',
   },
-  content: {
-    padding: 20,
-    paddingTop: 25,
+  cardContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  blurContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 16,
   },
   connectionCard: {
-    borderWidth: 1,
+    borderWidth: 2,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -320,83 +677,119 @@ const styles = StyleSheet.create({
   },
   connectionText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     flex: 1,
   },
   connectButton: {
-    backgroundColor: '#3B82F6',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  connectButtonGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
   },
   connectButtonText: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 14,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  iconGradient: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginLeft: 8,
+    fontWeight: '800',
+    color: '#667eea',
   },
   locationText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#666',
     lineHeight: 24,
+    fontWeight: '500',
   },
-  inputContainer: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    borderWidth: 2,
+    borderColor: 'rgba(102, 126, 234, 0.3)',
     borderRadius: 12,
     marginBottom: 16,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingRight: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    height: 48,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  inputIcon: {
+  inputIconGradient: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
     marginRight: 12,
   },
-  input: {
+  textInput: {
     flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: '#1F2937',
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
   },
   navigationButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  navigationButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  buttonIcon: {
-    marginRight: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
   navigationButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginLeft: 8,
   },
   directionsContainer: {
     marginTop: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  directionsGradient: {
     padding: 16,
-    backgroundColor: '#EBF8FF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: 'rgba(102, 126, 234, 0.3)',
   },
   directionsTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1E40AF',
+    fontWeight: '700',
+    color: '#667eea',
     marginBottom: 12,
   },
   directionItem: {
@@ -405,22 +798,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   directionNumber: {
-    backgroundColor: '#3B82F6',
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
     width: 20,
     height: 20,
     borderRadius: 10,
-    textAlign: 'center',
-    lineHeight: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
+  },
+  directionNumberText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   directionText: {
     flex: 1,
     fontSize: 14,
-    color: '#1E40AF',
+    color: '#667eea',
     lineHeight: 20,
+    fontWeight: '500',
   },
   quickActions: {
     flexDirection: 'row',
@@ -439,11 +834,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   quickActionText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#667eea',
     textAlign: 'center',
   },
 });

@@ -1,21 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Platform,
+  Dimensions,
+  Animated,
+  Easing,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
 
-// Note: For full Bluetooth functionality, you'll need a custom development build
-// This version includes mock functionality for development
+const { width, height } = Dimensions.get('window');
+
+// Responsive sizing function
+const isTabletOrDesktop = width >= 768;
+const scale = (size) => {
+  if (isTabletOrDesktop) {
+    return size; 
+  }
+  return size;
+};
 
 export default function BluetoothScreen() {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -57,14 +68,97 @@ export default function BluetoothScreen() {
     },
   ]);
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const logoRotateAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
+  // Button animation values
+  const scanButtonScale = useRef(new Animated.Value(1)).current;
+  const enableButtonScale = useRef(new Animated.Value(1)).current;
+  const connectButtonScale = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     requestPermissions();
     simulateBluetoothCheck();
+    startAnimations();
   }, []);
+
+  const startAnimations = () => {
+    // Entrance animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Logo rotation animation
+    Animated.loop(
+      Animated.timing(logoRotateAnim, {
+        toValue: 1,
+        duration: 20000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  };
+
+  // Hover animation functions
+  const createHoverAnimation = (animValue, toValue = 1.05) => ({
+    onPressIn: () => {
+      Animated.spring(animValue, {
+        toValue,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 4,
+      }).start();
+    },
+    onPressOut: () => {
+      Animated.spring(animValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 4,
+      }).start();
+    },
+  });
 
   const requestPermissions = async () => {
     try {
-      // Request location permissions (required for Bluetooth scanning)
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
@@ -83,7 +177,6 @@ export default function BluetoothScreen() {
   };
 
   const simulateBluetoothCheck = () => {
-    // Simulate Bluetooth availability check
     setTimeout(() => {
       setIsEnabled(true);
     }, 1000);
@@ -91,8 +184,6 @@ export default function BluetoothScreen() {
 
   const enableBluetooth = async () => {
     try {
-      // In a real app, this would enable Bluetooth
-      // For now, we'll simulate it
       Alert.alert(
         'Enable Bluetooth',
         'Please enable Bluetooth in your device settings.',
@@ -101,7 +192,6 @@ export default function BluetoothScreen() {
           {
             text: 'Settings',
             onPress: () => {
-              // In real app: Linking.openSettings();
               setIsEnabled(true);
               Alert.alert('Success', 'Bluetooth enabled successfully');
             }
@@ -126,9 +216,7 @@ export default function BluetoothScreen() {
 
     setScanning(true);
 
-    // Simulate scanning process
     setTimeout(() => {
-      // Add a new device to simulate discovery
       const newDevice = {
         id: `solemate-${devices.length + 1}`,
         name: `SoleMate-00${devices.length + 1}`,
@@ -141,7 +229,6 @@ export default function BluetoothScreen() {
       };
 
       setDevices(prevDevices => {
-        // Check if device already exists
         const exists = prevDevices.some(device => device.id === newDevice.id);
         if (!exists) {
           return [...prevDevices, newDevice];
@@ -165,9 +252,7 @@ export default function BluetoothScreen() {
         {
           text: 'Connect',
           onPress: () => {
-            // Simulate connection process
             setTimeout(() => {
-              // Disconnect previous device
               setDevices(prevDevices =>
                 prevDevices.map(d => ({ 
                   ...d, 
@@ -202,7 +287,6 @@ export default function BluetoothScreen() {
           text: 'Disconnect',
           style: 'destructive',
           onPress: () => {
-            // Reset all devices to unpaired
             setDevices(prevDevices =>
               prevDevices.map(d => ({ 
                 ...d, 
@@ -224,7 +308,6 @@ export default function BluetoothScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     
-    // Simulate refresh - update device battery levels
     setDevices(prevDevices =>
       prevDevices.map(device => ({
         ...device,
@@ -267,461 +350,680 @@ export default function BluetoothScreen() {
     return '#EF4444';
   };
 
+  const logoRotate = logoRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <LinearGradient
-        colors={['#3B82F6', '#1E40AF']}
-        style={styles.header}
+        colors={['#667eea', '#764ba2', '#f093fb']}
+        style={styles.container}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <Ionicons name="hardware-chip" size={40} color="#FFFFFF" style={styles.headerIcon} />
-        <Text style={styles.title}>SoleMate Connection</Text>
-        <Text style={styles.subtitle}>Connect to your smart shoe device</Text>
-      </LinearGradient>
-
-      <View style={styles.content}>
-        {/* Permission Status */}
-        <View style={[styles.card, styles.statusCard, {
-          backgroundColor: hasPermissions ? '#ECFDF5' : '#FEF2F2',
-          borderColor: hasPermissions ? '#10B981' : '#EF4444'
-        }]}>
-          <View style={styles.statusHeader}>
-            <View style={styles.statusLeft}>
-              <Ionicons 
-                name="shield-checkmark" 
-                size={24} 
-                color={hasPermissions ? '#10B981' : '#EF4444'} 
-              />
-              <View style={styles.statusText}>
-                <Text style={[styles.statusTitle, { 
-                  color: hasPermissions ? '#065F46' : '#991B1B' 
-                }]}>
-                  Permissions {hasPermissions ? 'Granted' : 'Required'}
-                </Text>
-                <Text style={[styles.statusSubtitle, { 
-                  color: hasPermissions ? '#047857' : '#B91C1C' 
-                }]}>
-                  {hasPermissions ? 'Location access granted' : 'Location permission needed'}
-                </Text>
-              </View>
-            </View>
-            
-            {!hasPermissions && (
-              <TouchableOpacity 
-                style={styles.enableButton}
-                onPress={requestPermissions}
-              >
-                <Text style={styles.enableButtonText}>Grant</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        {/* Animated Background Elements */}
+        <View style={styles.backgroundElements}>
+          <Animated.View style={[styles.floatingElement, styles.element1, {
+            transform: [{ rotate: logoRotate }]
+          }]} />
+          <Animated.View style={[styles.floatingElement, styles.element2, {
+            transform: [{ rotate: logoRotate }]
+          }]} />
+          <Animated.View style={[styles.floatingElement, styles.element3, {
+            transform: [{ rotate: logoRotate }]
+          }]} />
         </View>
 
-        {/* Bluetooth Status */}
-        <View style={[styles.card, styles.statusCard, {
-          backgroundColor: isEnabled ? '#ECFDF5' : '#FEF2F2',
-          borderColor: isEnabled ? '#10B981' : '#EF4444'
-        }]}>
-          <View style={styles.statusHeader}>
-            <View style={styles.statusLeft}>
-              <Ionicons 
-                name="bluetooth" 
-                size={24} 
-                color={isEnabled ? '#10B981' : '#EF4444'} 
-              />
-              <View style={styles.statusText}>
-                <Text style={[styles.statusTitle, { 
-                  color: isEnabled ? '#065F46' : '#991B1B' 
-                }]}>
-                  Bluetooth {isEnabled ? 'Enabled' : 'Disabled'}
-                </Text>
-                <Text style={[styles.statusSubtitle, { 
-                  color: isEnabled ? '#047857' : '#B91C1C' 
-                }]}>
-                  {isEnabled ? 'Ready to scan for devices' : 'Enable Bluetooth to continue'}
-                </Text>
-              </View>
-            </View>
-            
-            {!isEnabled && (
-              <TouchableOpacity 
-                style={styles.enableButton}
-                onPress={enableBluetooth}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Header */}
+          <Animated.View style={[
+            styles.headerContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}>
+            <Animated.View style={[
+              styles.logoContainer,
+              { transform: [{ rotate: logoRotate }] }
+            ]}>
+              <LinearGradient
+                colors={['#FF6B6B', '#4ECDC4']}
+                style={styles.logoGradient}
               >
-                <Text style={styles.enableButtonText}>Enable</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+                <Ionicons name="hardware-chip" size={32} color="#fff" />
+              </LinearGradient>
+            </Animated.View>
+            <Text style={styles.title}>SoleMate Connection</Text>
+            <Text style={styles.subtitle}>✨ Connect to your smart shoe device ✨</Text>
+          </Animated.View>
 
-        {/* Connection Status */}
-        {isEnabled && (
-          <View style={[styles.card, styles.statusCard, {
-            backgroundColor: isConnected ? '#ECFDF5' : '#FEF2F2',
-            borderColor: isConnected ? '#10B981' : '#EF4444'
-          }]}>
-            <View style={styles.statusHeader}>
-              <View style={styles.statusLeft}>
-                <Ionicons 
-                  name="link" 
-                  size={24} 
-                  color={isConnected ? '#10B981' : '#EF4444'} 
-                />
-                <View style={styles.statusText}>
-                  <Text style={[styles.statusTitle, { 
-                    color: isConnected ? '#065F46' : '#991B1B' 
-                  }]}>
-                    {isConnected ? 'Connected' : 'Not Connected'}
-                  </Text>
-                  <Text style={[styles.statusSubtitle, { 
-                    color: isConnected ? '#047857' : '#B91C1C' 
-                  }]}>
-                    {isConnected ? connectedDevice?.name : 'No SoleMate device connected'}
-                  </Text>
-                </View>
-              </View>
-              
-              {isConnected && (
-                <TouchableOpacity 
-                  style={styles.disconnectButton}
-                  onPress={disconnectDevice}
-                >
-                  <Text style={styles.disconnectButtonText}>Disconnect</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {isConnected && connectedDevice && (
-              <View style={styles.deviceDetails}>
-                <View style={styles.deviceDetail}>
-                  <Ionicons 
-                    name={getBatteryIcon(connectedDevice.battery)} 
-                    size={16} 
-                    color={getBatteryColor(connectedDevice.battery)} 
-                  />
-                  <Text style={styles.deviceDetailText}>
-                    Battery: {connectedDevice.battery}%
-                  </Text>
-                </View>
-                <View style={styles.deviceDetail}>
-                  <Ionicons name="radio" size={16} color="#065F46" />
-                  <Text style={styles.deviceDetailText}>
-                    Signal: {getSignalStrength(connectedDevice.signal)}
-                  </Text>
-                </View>
-                <View style={styles.deviceDetail}>
-                  <Ionicons name="finger-print" size={16} color="#065F46" />
-                  <Text style={styles.deviceDetailText}>
-                    Address: {connectedDevice.address}
-                  </Text>
-                </View>
-                <View style={styles.deviceDetail}>
-                  <Ionicons name="checkmark-circle" size={16} color="#065F46" />
-                  <Text style={styles.deviceDetailText}>
-                    Type: {connectedDevice.type}
-                  </Text>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Scan Button */}
-        {isEnabled && hasPermissions && (
-          <TouchableOpacity
-            style={[styles.scanButton, scanning && styles.scanButtonDisabled]}
-            onPress={scanForDevices}
-            disabled={scanning}
-          >
-            {scanning ? (
-              <ActivityIndicator size="small" color="#FFFFFF" style={styles.scanIcon} />
-            ) : (
-              <Ionicons name="search" size={20} color="#FFFFFF" style={styles.scanIcon} />
-            )}
-            <Text style={styles.scanButtonText}>
-              {scanning ? 'Scanning for SoleMate Devices...' : 'Scan for SoleMate Devices'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Available Devices */}
-        {isEnabled && devices.length > 0 && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Available SoleMate Devices</Text>
-              <Text style={styles.deviceCount}>{devices.length} found</Text>
-            </View>
-            
-            <View style={styles.deviceList}>
-              {devices.map((device, index) => (
-                <View key={device.id} style={styles.deviceItem}>
-                  <View style={styles.deviceInfo}>
-                    <View style={[styles.deviceIcon, {
-                      backgroundColor: device.paired ? '#ECFDF5' : '#EBF8FF',
-                    }]}>
-                      <Ionicons 
-                        name="hardware-chip" 
-                        size={24} 
-                        color={device.paired ? '#10B981' : '#3B82F6'} 
-                      />
-                    </View>
-                    
-                    <View style={styles.deviceDetails}>
-                      <Text style={styles.deviceName}>{device.name}</Text>
-                      <Text style={styles.deviceType}>{device.type}</Text>
-                      <View style={styles.deviceStats}>
-                        <View style={styles.deviceStat}>
-                          <View style={[styles.signalDot, { 
-                            backgroundColor: getSignalColor(device.signal) 
-                          }]} />
-                          <Text style={styles.deviceStatText}>
-                            {device.signal} dBm
-                          </Text>
-                        </View>
-                        <View style={styles.deviceStat}>
-                          <Ionicons 
-                            name={getBatteryIcon(device.battery)} 
-                            size={12} 
-                            color={getBatteryColor(device.battery)} 
-                          />
-                          <Text style={styles.deviceStatText}>
-                            {device.battery}%
-                          </Text>
-                        </View>
-                        <View style={styles.deviceStat}>
-                          <Ionicons name="finger-print" size={12} color="#6B7280" />
-                          <Text style={styles.deviceStatText}>
-                            {device.address.slice(-5)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
+          {/* Status Cards */}
+          <Animated.View style={[
+            styles.statusContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}>
+            {/* Permission Status */}
+            <BlurView intensity={80} style={styles.statusCard}>
+              <View style={[styles.statusContent, {
+                backgroundColor: hasPermissions ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              }]}>
+                <View style={styles.statusHeader}>
+                  <LinearGradient
+                    colors={hasPermissions ? ['#10B981', '#059669'] : ['#EF4444', '#DC2626']}
+                    style={styles.statusIconGradient}
+                  >
+                    <Ionicons name="shield-checkmark" size={20} color="#fff" />
+                  </LinearGradient>
+                  <View style={styles.statusText}>
+                    <Text style={styles.statusTitle}>
+                      Permissions {hasPermissions ? 'Granted' : 'Required'}
+                    </Text>
+                    <Text style={styles.statusSubtitle}>
+                      {hasPermissions ? 'Location access granted' : 'Location permission needed'}
+                    </Text>
                   </View>
-
-                  <View style={styles.deviceAction}>
-                    {device.paired ? (
-                      <View style={styles.connectedBadge}>
-                        <Ionicons name="checkmark-circle" size={12} color="#065F46" />
-                        <Text style={styles.connectedBadgeText}>Connected</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.connectButton}
-                        onPress={() => connectToDevice(device)}
+                  {!hasPermissions && (
+                    <Animated.View style={[{ transform: [{ scale: enableButtonScale }] }]}>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={requestPermissions}
+                        activeOpacity={0.8}
+                        {...createHoverAnimation(enableButtonScale)}
                       >
-                        <Text style={styles.connectButtonText}>Connect</Text>
+                        <LinearGradient
+                          colors={['#667eea', '#764ba2']}
+                          style={styles.actionButtonGradient}
+                        >
+                          <Text style={styles.actionButtonText}>Grant</Text>
+                        </LinearGradient>
                       </TouchableOpacity>
+                    </Animated.View>
+                  )}
+                </View>
+              </View>
+            </BlurView>
+
+            {/* Bluetooth Status */}
+            <BlurView intensity={80} style={styles.statusCard}>
+              <View style={[styles.statusContent, {
+                backgroundColor: isEnabled ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              }]}>
+                <View style={styles.statusHeader}>
+                  <LinearGradient
+                    colors={isEnabled ? ['#10B981', '#059669'] : ['#EF4444', '#DC2626']}
+                    style={styles.statusIconGradient}
+                  >
+                    <Ionicons name="bluetooth" size={20} color="#fff" />
+                  </LinearGradient>
+                  <View style={styles.statusText}>
+                    <Text style={styles.statusTitle}>
+                      Bluetooth {isEnabled ? 'Enabled' : 'Disabled'}
+                    </Text>
+                    <Text style={styles.statusSubtitle}>
+                      {isEnabled ? 'Ready to scan for devices' : 'Enable Bluetooth to continue'}
+                    </Text>
+                  </View>
+                  {!isEnabled && (
+                    <Animated.View style={[{ transform: [{ scale: enableButtonScale }] }]}>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={enableBluetooth}
+                        activeOpacity={0.8}
+                        {...createHoverAnimation(enableButtonScale)}
+                      >
+                        <LinearGradient
+                          colors={['#667eea', '#764ba2']}
+                          style={styles.actionButtonGradient}
+                        >
+                          <Text style={styles.actionButtonText}>Enable</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  )}
+                </View>
+              </View>
+            </BlurView>
+
+            {/* Connection Status */}
+            {isEnabled && (
+              <BlurView intensity={80} style={styles.statusCard}>
+                <View style={[styles.statusContent, {
+                  backgroundColor: isConnected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                }]}>
+                  <View style={styles.statusHeader}>
+                    <LinearGradient
+                      colors={isConnected ? ['#10B981', '#059669'] : ['#EF4444', '#DC2626']}
+                      style={styles.statusIconGradient}
+                    >
+                      <Ionicons name="link" size={20} color="#fff" />
+                    </LinearGradient>
+                    <View style={styles.statusText}>
+                      <Text style={styles.statusTitle}>
+                        {isConnected ? 'Connected' : 'Not Connected'}
+                      </Text>
+                      <Text style={styles.statusSubtitle}>
+                        {isConnected ? connectedDevice?.name : 'No SoleMate device connected'}
+                      </Text>
+                    </View>
+                    {isConnected && (
+                      <Animated.View style={[{ transform: [{ scale: enableButtonScale }] }]}>
+                        <TouchableOpacity 
+                          style={styles.disconnectButton}
+                          onPress={disconnectDevice}
+                          activeOpacity={0.8}
+                          {...createHoverAnimation(enableButtonScale)}
+                        >
+                          <LinearGradient
+                            colors={['#EF4444', '#DC2626']}
+                            style={styles.actionButtonGradient}
+                          >
+                            <Text style={styles.actionButtonText}>Disconnect</Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </Animated.View>
                     )}
                   </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
 
-        {/* Help Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Connection Help</Text>
-          <View style={styles.helpContent}>
-            <View style={styles.helpItem}>
-              <Ionicons name="information-circle" size={20} color="#3B82F6" />
-              <Text style={styles.helpText}>
-                Make sure your SoleMate device is powered on and in pairing mode
-              </Text>
-            </View>
-            <View style={styles.helpItem}>
-              <Ionicons name="refresh" size={20} color="#3B82F6" />
-              <Text style={styles.helpText}>
-                Pull down to refresh device status or tap scan to find new devices
-              </Text>
-            </View>
-            <View style={styles.helpItem}>
-              <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
-              <Text style={styles.helpText}>
-                Only connect to trusted SoleMate devices with proper authentication
-              </Text>
-            </View>
-            <View style={styles.helpItem}>
-              <Ionicons name="location" size={20} color="#3B82F6" />
-              <Text style={styles.helpText}>
-                Location permissions are required for Bluetooth device discovery
-              </Text>
-            </View>
-            <View style={styles.helpItem}>
-              <Ionicons name="build" size={20} color="#3B82F6" />
-              <Text style={styles.helpText}>
-                For full functionality, install the app on a physical device
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+                  {isConnected && connectedDevice && (
+                    <View style={styles.deviceDetails}>
+                      <View style={styles.deviceDetail}>
+                        <Ionicons 
+                          name={getBatteryIcon(connectedDevice.battery)} 
+                          size={16} 
+                          color={getBatteryColor(connectedDevice.battery)} 
+                        />
+                        <Text style={styles.deviceDetailText}>
+                          Battery: {connectedDevice.battery}%
+                        </Text>
+                      </View>
+                      <View style={styles.deviceDetail}>
+                        <Ionicons name="radio" size={16} color="#667eea" />
+                        <Text style={styles.deviceDetailText}>
+                          Signal: {getSignalStrength(connectedDevice.signal)}
+                        </Text>
+                      </View>
+                      <View style={styles.deviceDetail}>
+                        <Ionicons name="finger-print" size={16} color="#667eea" />
+                        <Text style={styles.deviceDetailText}>
+                          Address: {connectedDevice.address}
+                        </Text>
+                      </View>
+                      <View style={styles.deviceDetail}>
+                        <Ionicons name="checkmark-circle" size={16} color="#667eea" />
+                        <Text style={styles.deviceDetailText}>
+                          Type: {connectedDevice.type}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              </BlurView>
+            )}
+          </Animated.View>
+
+          {/* Scan Button */}
+          {isEnabled && hasPermissions && (
+            <Animated.View style={[
+              { opacity: fadeAnim, transform: [{ scale: scanButtonScale }] }
+            ]}>
+              <TouchableOpacity
+                style={[styles.scanButton, scanning && styles.scanButtonDisabled]}
+                onPress={scanForDevices}
+                disabled={scanning}
+                activeOpacity={0.8}
+                {...createHoverAnimation(scanButtonScale)}
+              >
+                <LinearGradient
+                  colors={scanning ? ['#9CA3AF', '#9CA3AF'] : ['#667eea', '#764ba2']}
+                  style={styles.scanButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  {scanning ? (
+                    <>
+                      <ActivityIndicator size="small" color="#FFFFFF" style={styles.scanIcon} />
+                      <Text style={styles.scanButtonText}>Scanning for SoleMate Devices...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="search" size={18} color="#fff" style={styles.scanIcon} />
+                      <Text style={styles.scanButtonText}>Scan for SoleMate Devices</Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Available Devices */}
+          {isEnabled && devices.length > 0 && (
+            <Animated.View style={[
+              styles.devicesContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}>
+              <BlurView intensity={80} style={styles.devicesCard}>
+                <View style={styles.devicesContent}>
+                  <View style={styles.devicesHeader}>
+                    <Text style={styles.devicesTitle}>Available SoleMate Devices</Text>
+                    <View style={styles.deviceCountBadge}>
+                      <Text style={styles.deviceCountText}>{devices.length} found</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.deviceList}>
+                    {devices.map((device, index) => (
+                      <Animated.View 
+                        key={device.id} 
+                        style={[
+                          styles.deviceItem,
+                          { transform: [{ scale: pulseAnim }] }
+                        ]}
+                      >
+                        <View style={styles.deviceInfo}>
+                          <LinearGradient
+                            colors={device.paired ? ['#10B981', '#059669'] : ['#667eea', '#764ba2']}
+                            style={styles.deviceIcon}
+                          >
+                            <Ionicons 
+                              name="hardware-chip" 
+                              size={24} 
+                              color="#fff" 
+                            />
+                          </LinearGradient>
+                          
+                          <View style={styles.deviceInfoText}>
+                            <Text style={styles.deviceName}>{device.name}</Text>
+                            <Text style={styles.deviceType}>{device.type}</Text>
+                            <View style={styles.deviceStats}>
+                              <View style={styles.deviceStat}>
+                                <View style={[styles.signalDot, { 
+                                  backgroundColor: getSignalColor(device.signal) 
+                                }]} />
+                                <Text style={styles.deviceStatText}>
+                                  {device.signal} dBm
+                                </Text>
+                              </View>
+                              <View style={styles.deviceStat}>
+                                <Ionicons 
+                                  name={getBatteryIcon(device.battery)} 
+                                  size={12} 
+                                  color={getBatteryColor(device.battery)} 
+                                />
+                                <Text style={styles.deviceStatText}>
+                                  {device.battery}%
+                                </Text>
+                              </View>
+                              <View style={styles.deviceStat}>
+                                <Ionicons name="finger-print" size={12} color="#667eea" />
+                                <Text style={styles.deviceStatText}>
+                                  {device.address.slice(-5)}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+
+                        <View style={styles.deviceAction}>
+                          {device.paired ? (
+                            <View style={styles.connectedBadge}>
+                              <Ionicons name="checkmark-circle" size={12} color="#059669" />
+                              <Text style={styles.connectedBadgeText}>Connected</Text>
+                            </View>
+                          ) : (
+                            <Animated.View style={[{ transform: [{ scale: connectButtonScale }] }]}>
+                              <TouchableOpacity
+                                style={styles.connectButton}
+                                onPress={() => connectToDevice(device)}
+                                activeOpacity={0.8}
+                                {...createHoverAnimation(connectButtonScale)}
+                              >
+                                <LinearGradient
+                                  colors={['#667eea', '#764ba2']}
+                                  style={styles.connectButtonGradient}
+                                >
+                                  <Text style={styles.connectButtonText}>Connect</Text>
+                                </LinearGradient>
+                              </TouchableOpacity>
+                            </Animated.View>
+                          )}
+                        </View>
+                      </Animated.View>
+                    ))}
+                  </View>
+                </View>
+              </BlurView>
+            </Animated.View>
+          )}
+
+          {/* Help Section */}
+          <Animated.View style={[
+            styles.helpContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}>
+            <BlurView intensity={80} style={styles.helpCard}>
+              <View style={styles.helpContent}>
+                <Text style={styles.helpTitle}>Connection Help</Text>
+                <View style={styles.helpItems}>
+                  {[
+                    { icon: 'information-circle', text: 'Make sure your SoleMate device is powered on and in pairing mode' },
+                    { icon: 'refresh', text: 'Pull down to refresh device status or tap scan to find new devices' },
+                    { icon: 'shield-checkmark', text: 'Only connect to trusted SoleMate devices with proper authentication' },
+                    { icon: 'location', text: 'Location permissions are required for Bluetooth device discovery' },
+                    { icon: 'build', text: 'For full functionality, install the app on a physical device' }
+                  ].map((item, index) => (
+                    <View key={index} style={styles.helpItem}>
+                      <LinearGradient
+                        colors={['#667eea', '#764ba2']}
+                        style={styles.helpIconGradient}
+                      >
+                        <Ionicons name={item.icon} size={16} color="#fff" />
+                      </LinearGradient>
+                      <Text style={styles.helpText}>{item.text}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </BlurView>
+          </Animated.View>
+        </ScrollView>
+      </LinearGradient>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
-  header: {
-    paddingTop: 50,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+  scrollContainer: {
+    flexGrow: 1,
+    paddingVertical: scale(15),
+    minHeight: height,
+    paddingHorizontal: scale(20),
+  },
+
+  // Background Elements
+  backgroundElements: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  floatingElement: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 100,
+  },
+  element1: {
+    width: scale(150),
+    height: scale(150),
+    top: -scale(75),
+    right: -scale(75),
+  },
+  element2: {
+    width: scale(120),
+    height: scale(120),
+    bottom: scale(80),
+    left: -scale(60),
+  },
+  element3: {
+    width: scale(80),
+    height: scale(80),
+    top: '40%',
+    right: -scale(40),
+  },
+
+  // Header Styles
+  headerContainer: {
     alignItems: 'center',
+    marginBottom: scale(30),
+    marginTop: scale(50),
   },
-  headerIcon: {
-    marginBottom: 12,
+  logoContainer: {
+    marginBottom: scale(15),
+  },
+  logoGradient: {
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF6B6B',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
+    fontSize: scale(28),
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 1.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
+    marginBottom: scale(8),
   },
   subtitle: {
-    fontSize: 16,
-    color: '#BFDBFE',
+    fontSize: scale(16),
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    marginTop: 8,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  content: {
-    padding: 20,
-    paddingTop: 25,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+
+  // Status Cards
+  statusContainer: {
+    marginBottom: scale(20),
   },
   statusCard: {
-    borderWidth: 1,
+    borderRadius: scale(16),
+    overflow: 'hidden',
+    marginBottom: scale(12),
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  statusContent: {
+    padding: scale(20),
+    borderRadius: scale(16),
   },
   statusHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  statusLeft: {
-    flexDirection: 'row',
+  statusIconGradient: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     alignItems: 'center',
-    flex: 1,
+    justifyContent: 'center',
+    marginRight: scale(12),
   },
   statusText: {
-    marginLeft: 12,
     flex: 1,
   },
   statusTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: scale(16),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: scale(2),
   },
   statusSubtitle: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: scale(12),
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
   },
-  enableButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+  actionButton: {
+    borderRadius: scale(12),
+    overflow: 'hidden',
+    shadowColor: '#667eea',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  enableButtonText: {
-    color: '#FFFFFF',
+  actionButtonGradient: {
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: scale(12),
     fontWeight: '600',
-    fontSize: 14,
   },
   disconnectButton: {
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  disconnectButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
+    borderRadius: scale(12),
+    overflow: 'hidden',
+    shadowColor: '#EF4444',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   deviceDetails: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: scale(16),
+    paddingTop: scale(16),
     borderTopWidth: 1,
-    borderTopColor: '#D1FAE5',
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   deviceDetail: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   deviceDetailText: {
-    fontSize: 12,
-    color: '#065F46',
-    marginLeft: 6,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: scale(12),
+    marginLeft: scale(8),
+    fontWeight: '500',
   },
+
+  // Scan Button
   scanButton: {
-    backgroundColor: '#3B82F6',
+    marginHorizontal: scale(20),
+    marginBottom: scale(20),
+    borderRadius: scale(16),
+    overflow: 'hidden',
+    shadowColor: '#667eea',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  scanButtonDisabled: {
+    opacity: 0.7,
+  },
+  scanButtonGradient: {
+    paddingVertical: scale(16),
+    paddingHorizontal: scale(24),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  scanButtonDisabled: {
-    backgroundColor: '#9CA3AF',
   },
   scanIcon: {
-    marginRight: 8,
+    marginRight: scale(8),
   },
   scanButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#fff',
+    fontSize: scale(16),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+
+  // Devices Container
+  devicesContainer: {
+    marginBottom: scale(20),
+  },
+  devicesCard: {
+    borderRadius: scale(16),
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  devicesContent: {
+    padding: scale(20),
+  },
+  devicesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: scale(16),
+  },
+  devicesTitle: {
+    fontSize: scale(18),
+    fontWeight: '700',
+    color: '#fff',
+  },
+  deviceCountBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
+  },
+  deviceCountText: {
+    color: '#fff',
+    fontSize: scale(12),
     fontWeight: '600',
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  deviceCount: {
-    fontSize: 14,
-    color: '#6B7280',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
   deviceList: {
-    gap: 16,
+    gap: scale(12),
   },
   deviceItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: scale(12),
+    padding: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   deviceInfo: {
     flexDirection: 'row',
@@ -729,82 +1031,134 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   deviceIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#EBF8FF',
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
+  },
+  deviceInfoText: {
+    flex: 1,
   },
   deviceName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: scale(16),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: scale(2),
+  },
+  deviceType: {
+    fontSize: scale(12),
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: scale(6),
   },
   deviceStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
+    gap: scale(12),
   },
   deviceStat: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
-    marginBottom: 2,
+    gap: scale(4),
   },
   signalDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 4,
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
   },
   deviceStatText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 2,
+    fontSize: scale(10),
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
   },
   deviceAction: {
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   connectedBadge: {
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(12),
+    gap: scale(4),
   },
   connectedBadgeText: {
-    color: '#065F46',
-    fontSize: 12,
+    color: '#10B981',
+    fontSize: scale(10),
     fontWeight: '600',
   },
   connectButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: scale(12),
+    overflow: 'hidden',
+    shadowColor: '#667eea',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  connectButtonGradient: {
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   connectButtonText: {
-    color: '#FFFFFF',
+    color: '#fff',
+    fontSize: scale(12),
     fontWeight: '600',
-    fontSize: 14,
+  },
+
+  // Help Section
+  helpContainer: {
+    marginBottom: scale(20),
+  },
+  helpCard: {
+    borderRadius: scale(16),
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   helpContent: {
-    gap: 16,
-    marginTop: 12,
+    padding: scale(20),
+  },
+  helpTitle: {
+    fontSize: scale(18),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: scale(16),
+  },
+  helpItems: {
+    gap: scale(12),
   },
   helpItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: scale(12),
+  },
+  helpIconGradient: {
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(14),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: scale(2),
   },
   helpText: {
     flex: 1,
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    marginLeft: 12,
+    fontSize: scale(14),
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: scale(20),
+    fontWeight: '500',
   },
-});
+};
