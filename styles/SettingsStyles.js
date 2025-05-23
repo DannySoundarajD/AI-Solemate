@@ -2,414 +2,232 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
-export const settingsStyles = StyleSheet.create({
+export default StyleSheet.create({
+  // Main Container
   container: {
     flex: 1,
-    paddingTop: 40,
   },
-  
   backgroundElements: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 0,
+    zIndex: -1,
   },
-  
   floatingElement: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 50,
-    opacity: 0.3,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 100,
   },
-  
   element1: {
-    width: 120,
-    height: 120,
-    top: height * 0.1,
-    right: -60,
-  },
-  
-  element2: {
-    width: 80,
-    height: 80,
-    top: height * 0.3,
-    left: -40,
-  },
-  
-  element3: {
     width: 150,
     height: 150,
-    bottom: height * 0.1,
+    top: -75,
     right: -75,
   },
-
+  element2: {
+    width: 120,
+    height: 120,
+    bottom: 80,
+    left: -60,
+  },
+  element3: {
+    width: 80,
+    height: 80,
+    top: '40%',
+    right: -40,
+  },
   scrollView: {
     flex: 1,
-    zIndex: 1,
   },
-  
   scrollContainer: {
-    paddingBottom: 100,
+    paddingVertical: 15,
   },
-
   header: {
-    marginHorizontal: 16,
+    marginHorizontal: 20,
+    marginTop: 50,
     marginBottom: 20,
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  
   headerGradient: {
-    padding: 20,
+    padding: 25,
+    borderRadius: 16,
   },
-  
   statusBar: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  
-  backButton: {
-    padding: 8,
-  },
-  
   appTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    marginLeft: -40,
   },
-  
   logoIconContainer: {
     marginRight: 12,
-    borderRadius: 12,
-    overflow: 'hidden',
   },
-  
   logoGradient: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
   appTitleText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#fff',
     marginRight: 8,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
-  
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  
-  statusInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  
-  batteryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  
-  batteryText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 4,
-  },
-
   welcomeSection: {
     alignItems: 'center',
   },
-  
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 4,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
-  
   welcomeSubtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
+    marginTop: 4,
+    fontWeight: '500',
   },
-
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
   cardContainer: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  
-  blurContainer: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  
-  card: {
-    padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  
-  statusCard: {
-    paddingVertical: 16,
-  },
-  
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  
-  iconGradient: {
-    padding: 8,
-    borderRadius: 10,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    flex: 1,
-  },
-
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  
-  statusLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  
-  statusText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  
-  infoButton: {
-    padding: 10,
-    borderRadius: 12,
-  },
-
-  settingsList: {
-    gap: 12,
-  },
-  
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  
+  settingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderRadius: 16,
+  },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  
-  settingIcon: {
-    padding: 10,
-    borderRadius: 12,
-    marginRight: 12,
+  settingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 16,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  
-  settingInfo: {
+  settingTextContainer: {
     flex: 1,
   },
-  
   settingTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '700',
+    color: '#fff',
     marginBottom: 2,
   },
-  
-  settingDescription: {
-    fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 16,
-  },
-  
-  settingRight: {
-    marginLeft: 12,
-  },
-  
-  selectorButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  
-  selectorGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  
-  selectorText: {
+  settingSubtitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#8B5CF6',
-    marginRight: 4,
-  },
-
-  actionButtons: {
-    gap: 12,
-  },
-  
-  primaryButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  
-  primaryButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginLeft: 8,
-  },
-  
-  secondaryButton: {
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  
-  secondaryButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 8,
-  },
-  
-  dangerButton: {
-    borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  
-  dangerButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  
-  dangerButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
-    marginLeft: 8,
-  },
-  
-  footerSection: {
-    marginHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  
-  footerCard: {
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  
-  footerText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  
-  versionText: {
-    fontSize: 14,
-    fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    marginBottom: 8,
+    fontWeight: '500',
   },
-  
-  linkText: {
-    color: '#8B5CF6',
-    textDecorationLine: 'underline',
-  },
-  
-  // Toggle Switch Styles
-  toggleContainer: {
+  actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    padding: 20,
+    borderRadius: 16,
   },
-  
-  toggleSwitch: {
-    transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }],
+  actionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
-  
+  actionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  actionTextContainer: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+  },
+  chevronContainer: {
+    marginLeft: 12,
+  },
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -417,91 +235,385 @@ export const settingsStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
   modalContainer: {
-    backgroundColor: '#FFFFFF',
+    width: width * 0.9,
+    maxHeight: '80%',
     borderRadius: 20,
-    margin: 20,
-    maxWidth: width * 0.9,
-    maxHeight: height * 0.8,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
   },
-  
+  modalContent: {
+    borderRadius: 20,
+    padding: 20,
+  },
   modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScrollView: {
+    maxHeight: '70%',
+  },
+  modalActionButton: {
+    marginTop: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalActionButtonGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalActionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  // Text Size Modal Styles
+  textSizeContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  textSizePreview: {
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  sliderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    width: '100%',
+    paddingHorizontal: 10,
   },
-  
-  modalTitle: {
+  slider: {
+    flex: 1,
+    height: 40,
+    marginHorizontal: 15,
+  },
+  sliderLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  thumbStyle: {
+    backgroundColor: '#fff',
+    width: 20,
+    height: 20,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  // FAQ Modal Styles
+  faqItem: {
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  faqQuestion: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  faqAnswer: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  contactSupport: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  contactText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 15,
+  },
+  contactButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  contactButtonGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  // Privacy Modal Styles
+  privacySectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: '#fff',
+    marginBottom: 10,
+    marginTop: 20,
   },
-  
-  modalCloseButton: {
-    padding: 8,
-    borderRadius: 8,
+  privacyText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 20,
+    marginBottom: 15,
+    fontWeight: '500',
   },
-  
-  modalContent: {
+  // About Modal Styles
+  aboutHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  aboutIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  aboutAppName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  aboutVersion: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '600',
+  },
+  aboutDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  aboutContact: {
+    margin: 20,
     padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    alignItems: 'center',
   },
-  
-  modalText: {
+  aboutContactTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  aboutContactLink: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 6,
+    textDecorationLine: 'underline',
+  },
+  // Feedback Modal Styles
+  feedbackDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  feedbackOptions: {
+    marginBottom: 20,
+  },
+  feedbackOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    padding: 16,
+    marginBottom: 12,
+    backgroundColor: 'rgba(102, 126, 234, 0.05)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.1)',
+  },
+  feedbackOptionText: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  feedbackOptionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  feedbackOptionSubtitle: {
     fontSize: 14,
     color: '#6B7280',
-    lineHeight: 20,
+    fontWeight: '500',
   },
-  
+
+  // Text Size Modal Styling
+  textSizeModalContent: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  textSizePreview: {
+    padding: 20,
+    backgroundColor: 'rgba(102, 126, 234, 0.05)',
+    borderRadius: 16,
+    marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
+  previewText: {
+    color: '#1F2937',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  sliderContainer: {
+    width: '100%',
+    marginVertical: 20,
+  },
+  sliderLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#667eea',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  sliderValue: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 12,
+    fontWeight: '600',
+  },
+
+  // Enhanced Button Styles
+  primaryButton: {
+    backgroundColor: '#667eea',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginVertical: 8,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginVertical: 8,
+    borderWidth: 2,
+    borderColor: '#667eea',
+  },
+  secondaryButtonText: {
+    color: '#667eea',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
   // Loading States
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
-  
   loadingText: {
+    marginTop: 16,
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 12,
+    color: '#667eea',
+    fontWeight: '600',
   },
-  
+
   // Error States
   errorContainer: {
-    padding: 20,
-    borderRadius: 16,
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: '#EF4444',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    margin: 20,
   },
-  
   errorText: {
+    color: '#DC2626',
     fontSize: 14,
-    color: '#EF4444',
+    fontWeight: '600',
     textAlign: 'center',
-    fontWeight: '500',
   },
-  
+
   // Success States
   successContainer: {
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: '#10B981',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.2)',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    margin: 20,
   },
-  
   successText: {
+    color: '#059669',
     fontSize: 14,
-    color: '#22C55E',
+    fontWeight: '600',
     textAlign: 'center',
-    fontWeight: '500',
+  },
+
+  // Accessibility Improvements
+  accessibilityFocus: {
+    borderWidth: 3,
+    borderColor: '#3B82F6',
+    borderRadius: 8,
+  },
+  screenReaderOnly: {
+    position: 'absolute',
+    left: -10000,
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
   },
 });

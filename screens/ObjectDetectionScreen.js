@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Switch,
+  ActivityIndicator,
   Dimensions,
   StatusBar,
   Animated,
@@ -14,29 +14,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import styles from "../styles/ObjectDetectionStyles"
 import { BlurView } from 'expo-blur';
-import { settingsStyles } from '../styles/SettingsStyles';
 
 const { width, height } = Dimensions.get('window');
 
-export default function SettingsScreen() {
+export default function ObjectDetectionScreen() {
   // State
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [voiceVolume, setVoiceVolume] = useState(80);
-  const [hapticFeedback, setHapticFeedback] = useState(true);
-  const [autoDetection, setAutoDetection] = useState(false);
-  const [detectionSensitivity, setDetectionSensitivity] = useState('medium');
-  const [batteryOptimization, setBatteryOptimization] = useState(true);
-  const [privacyMode, setPrivacyMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectedObjects, setDetectedObjects] = useState([]);
+  const [detectionHistory, setDetectionHistory] = useState([]);
   const [isConnected, setIsConnected] = useState(true);
-  const [deviceInfo, setDeviceInfo] = useState({
-    name: 'SoleMate Device',
-    version: '2.1.0',
-    battery: 85,
-    status: 'Connected'
-  });
+  const [cameraStatus, setCameraStatus] = useState('Ready');
+  const [batteryLevel, setBatteryLevel] = useState(85);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -44,11 +34,20 @@ export default function SettingsScreen() {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const logoRotateAnim = useRef(new Animated.Value(0)).current;
   const statusPulseAnim = useRef(new Animated.Value(1)).current;
+  const scanningAnim = useRef(new Animated.Value(0)).current;
   
   // Button animation values
-  const saveButtonScale = useRef(new Animated.Value(1)).current;
-  const resetButtonScale = useRef(new Animated.Value(1)).current;
-  const backButtonScale = useRef(new Animated.Value(1)).current;
+  const detectButtonScale = useRef(new Animated.Value(1)).current;
+  const clearButtonScale = useRef(new Animated.Value(1)).current;
+  const settingsButtonScale = useRef(new Animated.Value(1)).current;
+
+  const mockObjects = [
+    { id: 1, name: 'Chair', confidence: 0.95, distance: '2 meters ahead', direction: 'center', risk: 'low' },
+    { id: 2, name: 'Table', confidence: 0.87, distance: '3 meters to the right', direction: 'right', risk: 'medium' },
+    { id: 3, name: 'Person', confidence: 0.92, distance: '5 meters ahead', direction: 'center', risk: 'low' },
+    { id: 4, name: 'Door', confidence: 0.89, distance: '1 meter left', direction: 'left', risk: 'low' },
+    { id: 5, name: 'Steps', confidence: 0.78, distance: '4 meters ahead', direction: 'center', risk: 'high' },
+  ];
 
   useEffect(() => {
     // Entrance animations
@@ -99,7 +98,32 @@ export default function SettingsScreen() {
         }),
       ])
     ).start();
+
+    // Battery simulation
+    const batteryInterval = setInterval(() => {
+      setBatteryLevel(prev => Math.max(prev - 1, 0));
+    }, 30000);
+
+    return () => {
+      clearInterval(batteryInterval);
+    };
   }, []);
+
+  // Scanning animation
+  useEffect(() => {
+    if (isDetecting) {
+      Animated.loop(
+        Animated.timing(scanningAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      scanningAnim.setValue(0);
+    }
+  }, [isDetecting]);
 
   // Animation helper functions
   const createHoverAnimation = (animValue, toValue = 1.05) => ({
@@ -121,39 +145,84 @@ export default function SettingsScreen() {
     },
   });
 
-  const handleSaveSettings = () => {
-    Alert.alert('Settings Saved', 'Your preferences have been updated successfully');
+  const startDetection = async () => {
+    if (!isConnected) {
+      Alert.alert('Device Not Connected', 'Please connect your SoleMate device first');
+      return;
+    }
+
+    setIsDetecting(true);
+    setCameraStatus('Analyzing...');
+    
+    // Simulate AI detection process
+    setTimeout(() => {
+      const numObjects = Math.floor(Math.random() * 4) + 1;
+      const selectedObjects = mockObjects
+        .sort(() => 0.5 - Math.random())
+        .slice(0, numObjects)
+        .map((obj, index) => ({
+          ...obj,
+          id: Date.now() + index,
+          timestamp: new Date().toLocaleTimeString(),
+        }));
+
+      setDetectedObjects(selectedObjects);
+      setDetectionHistory(prev => [...selectedObjects, ...prev].slice(0, 20));
+      setIsDetecting(false);
+      setCameraStatus('Detection Complete');
+      
+      // Announce objects via alert (in real app, this would be voice)
+      const objectNames = selectedObjects.map(obj => obj.name).join(', ');
+      Alert.alert('Objects Detected', `Found: ${objectNames}`);
+    }, 3000);
   };
 
-  const handleResetSettings = () => {
+  const stopDetection = () => {
+    setIsDetecting(false);
+    setCameraStatus('Stopped');
+    setDetectedObjects([]);
+  };
+
+  const clearHistory = () => {
     Alert.alert(
-      'Reset Settings',
-      'Are you sure you want to reset all settings to default?',
+      'Clear History',
+      'Are you sure you want to clear detection history?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
-          onPress: () => {
-            setVoiceEnabled(true);
-            setVoiceVolume(80);
-            setHapticFeedback(true);
-            setAutoDetection(false);
-            setDetectionSensitivity('medium');
-            setBatteryOptimization(true);
-            setPrivacyMode(false);
-            setNotifications(true);
-            setDarkMode(false);
-          }
-        }
+        { text: 'Clear', onPress: () => setDetectionHistory([]) }
       ]
     );
   };
 
-  const handleDeviceInfo = () => {
-    Alert.alert(
-      'Device Information',
-      `Name: ${deviceInfo.name}\nVersion: ${deviceInfo.version}\nBattery: ${deviceInfo.battery}%\nStatus: ${deviceInfo.status}`
-    );
+  const getRiskColor = (risk) => {
+    switch (risk) {
+      case 'high': return ['#EF4444', '#DC2626'];
+      case 'medium': return ['#F59E0B', '#D97706'];
+      case 'low': return ['#10B981', '#059669'];
+      default: return ['#6B7280', '#4B5563'];
+    }
+  };
+
+  const getRiskIcon = (risk) => {
+    switch (risk) {
+      case 'high': return 'warning';
+      case 'medium': return 'alert-circle';
+      case 'low': return 'checkmark-circle';
+      default: return 'help-circle';
+    }
+  };
+
+  const getDirectionIcon = (direction) => {
+    switch (direction) {
+      case 'left': return 'arrow-back';
+      case 'right': return 'arrow-forward';
+      case 'center': return 'arrow-up';
+      default: return 'locate';
+    }
+  };
+
+  const speakObject = (objectName) => {
+    Alert.alert('Voice Announcement', `"${objectName}" detected`);
   };
 
   const logoRotate = logoRotateAnim.interpolate({
@@ -161,91 +230,46 @@ export default function SettingsScreen() {
     outputRange: ['0deg', '360deg'],
   });
 
-  const renderSettingItem = (icon, title, description, value, onValueChange, type = 'switch', options = []) => (
-    <LinearGradient
-      colors={['rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0.6)']}
-      style={settingsStyles.settingItem}
-    >
-      <View style={settingsStyles.settingLeft}>
-        <LinearGradient
-          colors={['#8B5CF6', '#7C3AED']}
-          style={settingsStyles.settingIcon}
-        >
-          <Ionicons name={icon} size={20} color="#fff" />
-        </LinearGradient>
-        
-        <View style={settingsStyles.settingInfo}>
-          <Text style={settingsStyles.settingTitle}>{title}</Text>
-          <Text style={settingsStyles.settingDescription}>{description}</Text>
-        </View>
-      </View>
+  const scanningOpacity = scanningAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.3, 1, 0.3],
+  });
 
-      <View style={settingsStyles.settingRight}>
-        {type === 'switch' && (
-          <Switch
-            value={value}
-            onValueChange={onValueChange}
-            trackColor={{ false: '#E5E7EB', true: '#8B5CF6' }}
-            thumbColor={value ? '#FFFFFF' : '#F3F4F6'}
-          />
-        )}
-        {type === 'selector' && (
-          <TouchableOpacity 
-            style={settingsStyles.selectorButton}
-            onPress={() => {
-              Alert.alert(
-                title,
-                'Select option:',
-                options.map(option => ({
-                  text: option.label,
-                  onPress: () => onValueChange(option.value)
-                }))
-              );
-            }}
-          >
-            <LinearGradient
-              colors={['rgba(139, 92, 246, 0.1)', 'rgba(124, 58, 237, 0.1)']}
-              style={settingsStyles.selectorGradient}
-            >
-              <Text style={settingsStyles.selectorText}>{value}</Text>
-              <Ionicons name="chevron-down" size={16} color="#8B5CF6" />
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-      </View>
-    </LinearGradient>
-  );
+  const scanningScale = scanningAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.8, 1.1, 0.8],
+  });
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <LinearGradient
         colors={['#8B5CF6', '#7C3AED', '#6D28D9']}
-        style={settingsStyles.container}
+        style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         {/* Animated Background Elements */}
-        <View style={settingsStyles.backgroundElements}>
-          <Animated.View style={[settingsStyles.floatingElement, settingsStyles.element1, {
+        <View style={styles.backgroundElements}>
+          <Animated.View style={[styles.floatingElement, styles.element1, {
             transform: [{ rotate: logoRotate }]
           }]} />
-          <Animated.View style={[settingsStyles.floatingElement, settingsStyles.element2, {
+          <Animated.View style={[styles.floatingElement, styles.element2, {
             transform: [{ rotate: logoRotate }]
           }]} />
-          <Animated.View style={[settingsStyles.floatingElement, settingsStyles.element3, {
+          <Animated.View style={[styles.floatingElement, styles.element3, {
             transform: [{ rotate: logoRotate }]
           }]} />
         </View>
 
         <ScrollView 
-          style={settingsStyles.scrollView}
-          contentContainerStyle={settingsStyles.scrollContainer}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <Animated.View style={[
-            settingsStyles.header,
+            styles.header,
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }]
@@ -253,29 +277,25 @@ export default function SettingsScreen() {
           ]}>
             <LinearGradient
               colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
-              style={settingsStyles.headerGradient}
+              style={styles.headerGradient}
             >
-              <View style={settingsStyles.statusBar}>
-                <TouchableOpacity style={settingsStyles.backButton}>
-                  <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-                
-                <View style={settingsStyles.appTitle}>
+              <View style={styles.statusBar}>
+                <View style={styles.appTitle}>
                   <Animated.View style={[
-                    settingsStyles.logoIconContainer,
+                    styles.logoIconContainer,
                     { transform: [{ rotate: logoRotate }] }
                   ]}>
                     <LinearGradient
                       colors={['#10B981', '#059669']}
-                      style={settingsStyles.logoGradient}
+                      style={styles.logoGradient}
                     >
-                      <Ionicons name="settings" size={24} color="#fff" />
+                      <Ionicons name="eye" size={24} color="#fff" />
                     </LinearGradient>
                   </Animated.View>
-                  <View style={settingsStyles.titleContainer}>
-                    <Text style={settingsStyles.appTitleText}>Settings</Text>
+                  <View style={styles.titleContainer}>
+                    <Text style={styles.appTitleText}>Object Detection</Text>
                     <Animated.View style={[
-                      settingsStyles.statusDot, 
+                      styles.statusDot, 
                       { 
                         backgroundColor: isConnected ? '#10B981' : '#EF4444',
                         transform: [{ scale: statusPulseAnim }]
@@ -284,339 +304,360 @@ export default function SettingsScreen() {
                   </View>
                 </View>
                 
-                <View style={settingsStyles.statusInfo}>
+                <View style={styles.statusInfo}>
                   <LinearGradient
                     colors={['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.1)']}
-                    style={settingsStyles.batteryContainer}
+                    style={styles.batteryContainer}
                   >
                     <Ionicons name="battery-half" size={16} color="#FFFFFF" />
-                    <Text style={settingsStyles.batteryText}>{deviceInfo.battery}%</Text>
+                    <Text style={styles.batteryText}>{batteryLevel}%</Text>
                   </LinearGradient>
                 </View>
               </View>
 
-              <View style={settingsStyles.welcomeSection}>
-                <Text style={settingsStyles.welcomeTitle}>Device Settings</Text>
-                <Text style={settingsStyles.welcomeSubtitle}>Customize your SoleMate experience</Text>
+              <View style={styles.welcomeSection}>
+                <Text style={styles.welcomeTitle}>AI Vision Active</Text>
+                <Text style={styles.welcomeSubtitle}>Real-time object recognition</Text>
               </View>
             </LinearGradient>
           </Animated.View>
 
-          {/* Device Status Card */}
+          {/* Camera Status Card */}
           <Animated.View style={[
-            settingsStyles.cardContainer,
+            styles.cardContainer,
             {
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }]
             }
           ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={[settingsStyles.card, settingsStyles.statusCard]}>
-                <View style={settingsStyles.statusHeader}>
-                  <View style={settingsStyles.statusLeft}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={[styles.card, styles.statusCard]}>
+                <View style={styles.statusHeader}>
+                  <View style={styles.statusLeft}>
                     <LinearGradient
                       colors={['#8B5CF6', '#7C3AED']}
-                      style={settingsStyles.iconGradient}
+                      style={styles.iconGradient}
                     >
-                      <Ionicons name="hardware-chip" size={20} color="#fff" />
+                      <Ionicons name="camera" size={20} color="#fff" />
                     </LinearGradient>
-                    <View style={settingsStyles.statusInfo}>
-                      <Text style={settingsStyles.statusTitle}>Device Status</Text>
-                      <Text style={settingsStyles.statusText}>{deviceInfo.status}</Text>
+                    <View style={styles.statusInfo}>
+                      <Text style={styles.statusTitle}>Camera Status</Text>
+                      <Text style={styles.statusText}>{cameraStatus}</Text>
                     </View>
                   </View>
-                  <TouchableOpacity onPress={handleDeviceInfo}>
-                    <LinearGradient
-                      colors={['rgba(139, 92, 246, 0.1)', 'rgba(124, 58, 237, 0.1)']}
-                      style={settingsStyles.infoButton}
-                    >
-                      <Ionicons name="information-circle" size={20} color="#8B5CF6" />
-                    </LinearGradient>
-                  </TouchableOpacity>
+                  <Animated.View style={[
+                    styles.connectionDot, 
+                    { 
+                      backgroundColor: isConnected ? '#10B981' : '#EF4444',
+                      transform: [{ scale: statusPulseAnim }]
+                    }
+                  ]} />
                 </View>
               </View>
             </BlurView>
           </Animated.View>
 
-          {/* Voice & Audio Settings */}
+          {/* Detection Controls Card */}
           <Animated.View style={[
-            settingsStyles.cardContainer,
+            styles.cardContainer,
             {
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }]
             }
           ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={settingsStyles.card}>
-                <View style={settingsStyles.cardHeader}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
                   <LinearGradient
                     colors={['#8B5CF6', '#7C3AED']}
-                    style={settingsStyles.iconGradient}
+                    style={styles.iconGradient}
                   >
-                    <Ionicons name="volume-high" size={16} color="#fff" />
+                    <Ionicons name="settings" size={16} color="#fff" />
                   </LinearGradient>
-                  <Text style={settingsStyles.cardTitle}>Voice & Audio</Text>
+                  <Text style={styles.cardTitle}>Detection Controls</Text>
                 </View>
                 
-                <View style={settingsStyles.settingsList}>
-                  {renderSettingItem(
-                    'volume-high',
-                    'Voice Announcements',
-                    'Enable voice feedback for detected objects',
-                    voiceEnabled,
-                    setVoiceEnabled
-                  )}
-                  
-                  {renderSettingItem(
-                    'musical-notes',
-                    'Audio Volume',
-                    'Adjust voice announcement volume',
-                    voiceVolume > 80 ? 'High' : voiceVolume > 50 ? 'Medium' : 'Low',
-                    (value) => {
-                      const volumeMap = { 'Low': 30, 'Medium': 60, 'High': 90 };
-                      setVoiceVolume(volumeMap[value]);
-                    },
-                    'selector',
-                    [
-                      { label: 'Low', value: 'Low' },
-                      { label: 'Medium', value: 'Medium' },
-                      { label: 'High', value: 'High' }
-                    ]
-                  )}
-                  
-                  {renderSettingItem(
-                    'phone-portrait',
-                    'Haptic Feedback',
-                    'Vibration alerts for important notifications',
-                    hapticFeedback,
-                    setHapticFeedback
-                  )}
+                <View style={styles.controlButtons}>
+                  <Animated.View style={[{ transform: [{ scale: detectButtonScale }] }]}>
+                    <TouchableOpacity
+                      style={styles.primaryButton}
+                      onPress={isDetecting ? stopDetection : startDetection}
+                      disabled={!isConnected}
+                      activeOpacity={0.8}
+                      {...createHoverAnimation(detectButtonScale)}
+                    >
+                      <LinearGradient
+                        colors={isDetecting ? ['#EF4444', '#DC2626'] : ['#8B5CF6', '#7C3AED']}
+                        style={styles.primaryButtonGradient}
+                      >
+                        {isDetecting ? (
+                          <Animated.View style={[
+                            styles.scanningContainer,
+                            {
+                              opacity: scanningOpacity,
+                              transform: [{ scale: scanningScale }]
+                            }
+                          ]}>
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          </Animated.View>
+                        ) : (
+                          <Ionicons name="eye" size={20} color="#FFFFFF" />
+                        )}
+                        <Text style={styles.primaryButtonText}>
+                          {isDetecting ? 'Stop Detection' : 'Start Detection'}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </Animated.View>
+
+                  <View style={styles.secondaryButtons}>
+                    <Animated.View style={[{ transform: [{ scale: settingsButtonScale }] }]}>
+                      <TouchableOpacity 
+                        style={styles.secondaryButton}
+                        {...createHoverAnimation(settingsButtonScale)}
+                      >
+                        <LinearGradient
+                          colors={['rgba(139, 92, 246, 0.1)', 'rgba(124, 58, 237, 0.1)']}
+                          style={styles.secondaryButtonGradient}
+                        >
+                          <Ionicons name="settings" size={18} color="#8B5CF6" />
+                          <Text style={styles.secondaryButtonText}>Settings</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animated.View>
+                    
+                    <Animated.View style={[{ transform: [{ scale: clearButtonScale }] }]}>
+                      <TouchableOpacity 
+                        style={styles.secondaryButton}
+                        onPress={clearHistory}
+                        {...createHoverAnimation(clearButtonScale)}
+                      >
+                        <LinearGradient
+                          colors={['rgba(239, 68, 68, 0.1)', 'rgba(220, 38, 38, 0.1)']}
+                          style={styles.secondaryButtonGradient}
+                        >
+                          <Ionicons name="trash" size={18} color="#EF4444" />
+                          <Text style={[styles.secondaryButtonText, { color: '#EF4444' }]}>Clear</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </View>
                 </View>
               </View>
             </BlurView>
           </Animated.View>
 
-          {/* Detection Settings */}
-          <Animated.View style={[
-            settingsStyles.cardContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={settingsStyles.card}>
-                <View style={settingsStyles.cardHeader}>
-                  <LinearGradient
-                    colors={['#10B981', '#059669']}
-                    style={settingsStyles.iconGradient}
-                  >
-                    <Ionicons name="eye" size={16} color="#fff" />
-                  </LinearGradient>
-                  <Text style={settingsStyles.cardTitle}>Detection Settings</Text>
-                </View>
-                
-                <View style={settingsStyles.settingsList}>
-                  {renderSettingItem(
-                    'refresh',
-                    'Auto Detection',
-                    'Automatically start detection when app opens',
-                    autoDetection,
-                    setAutoDetection
-                  )}
+          {/* Current Detection Results */}
+          {detectedObjects.length > 0 && (
+            <Animated.View style={[
+              styles.cardContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}>
+              <BlurView intensity={80} style={styles.blurContainer}>
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <LinearGradient
+                      colors={['#10B981', '#059669']}
+                      style={styles.iconGradient}
+                    >
+                      <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                    </LinearGradient>
+                    <Text style={styles.cardTitle}>Current Detection</Text>
+                    <LinearGradient
+                      colors={['rgba(16, 185, 129, 0.1)', 'rgba(5, 150, 105, 0.1)']}
+                      style={styles.objectCountContainer}
+                    >
+                      <Text style={styles.objectCount}>{detectedObjects.length} objects</Text>
+                    </LinearGradient>
+                  </View>
                   
-                  {renderSettingItem(
-                    'speedometer',
-                    'Detection Sensitivity',
-                    'Adjust how sensitive object detection is',
-                    detectionSensitivity.charAt(0).toUpperCase() + detectionSensitivity.slice(1),
-                    setDetectionSensitivity,
-                    'selector',
-                    [
-                      { label: 'Low', value: 'low' },
-                      { label: 'Medium', value: 'medium' },
-                      { label: 'High', value: 'high' }
-                    ]
-                  )}
-                </View>
-              </View>
-            </BlurView>
-          </Animated.View>
+                  <View style={styles.objectList}>
+                    {detectedObjects.map((object, index) => (
+                      <Animated.View 
+                        key={object.id} 
+                        style={[
+                          styles.objectItem,
+                          {
+                            opacity: fadeAnim,
+                            transform: [{
+                              translateX: slideAnim.interpolate({
+                                inputRange: [0, 50],
+                                outputRange: [0, (index % 2 === 0 ? -50 : 50)],
+                              })
+                            }]
+                          }
+                        ]}
+                      >
+                        <LinearGradient
+                          colors={['rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0.6)']}
+                          style={styles.objectItemGradient}
+                        >
+                          <View style={styles.objectLeft}>
+                            <LinearGradient
+                              colors={getRiskColor(object.risk)}
+                              style={styles.objectIcon}
+                            >
+                              <Ionicons name="cube" size={20} color="#fff" />
+                            </LinearGradient>
+                            
+                            <View style={styles.objectInfo}>
+                              <Text style={styles.objectName}>{object.name}</Text>
+                              <Text style={styles.objectDistance}>{object.distance}</Text>
+                              
+                              <View style={styles.objectDetails}>
+                                <View style={styles.objectDetail}>
+                                  <Ionicons 
+                                    name={getDirectionIcon(object.direction)} 
+                                    size={12} 
+                                    color="#6B7280" 
+                                  />
+                                  <Text style={styles.objectDetailText}>{object.direction}</Text>
+                                </View>
+                                
+                                <View style={styles.objectDetail}>
+                                  <Ionicons 
+                                    name={getRiskIcon(object.risk)} 
+                                    size={12} 
+                                    color={getRiskColor(object.risk)[0]} 
+                                  />
+                                  <Text style={[styles.objectDetailText, { 
+                                    color: getRiskColor(object.risk)[0] 
+                                  }]}>
+                                    {object.risk} risk
+                                  </Text>
+                                </View>
+                              </View>
+                            </View>
+                          </View>
 
-          {/* Privacy & Security */}
-          <Animated.View style={[
-            settingsStyles.cardContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={settingsStyles.card}>
-                <View style={settingsStyles.cardHeader}>
-                  <LinearGradient
-                    colors={['#EF4444', '#DC2626']}
-                    style={settingsStyles.iconGradient}
-                  >
-                    <Ionicons name="shield-checkmark" size={16} color="#fff" />
-                  </LinearGradient>
-                  <Text style={settingsStyles.cardTitle}>Privacy & Security</Text>
+                          <View style={styles.objectRight}>
+                            <LinearGradient
+                              colors={['rgba(30, 64, 175, 0.1)', 'rgba(30, 64, 175, 0.05)']}
+                              style={styles.confidenceContainer}
+                            >
+                              <Text style={styles.confidenceText}>
+                                {Math.round(object.confidence * 100)}%
+                              </Text>
+                            </LinearGradient>
+                            
+                            <TouchableOpacity 
+                              style={styles.speakButton}
+                              onPress={() => speakObject(object.name)}
+                            >
+                              <LinearGradient
+                                colors={['#8B5CF6', '#7C3AED']}
+                                style={styles.speakButtonGradient}
+                              >
+                                <Ionicons name="volume-high" size={16} color="#fff" />
+                              </LinearGradient>
+                            </TouchableOpacity>
+                          </View>
+                        </LinearGradient>
+                      </Animated.View>
+                    ))}
+                  </View>
                 </View>
-                
-                <View style={settingsStyles.settingsList}>
-                  {renderSettingItem(
-                    'eye-off',
-                    'Privacy Mode',
-                    'Disable data collection and analytics',
-                    privacyMode,
-                    setPrivacyMode
-                  )}
+              </BlurView>
+            </Animated.View>
+          )}
+
+          {/* Detection History */}
+          {detectionHistory.length > 0 && (
+            <Animated.View style={[
+              styles.cardContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}>
+              <BlurView intensity={80} style={styles.blurContainer}>
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <LinearGradient
+                      colors={['#6B7280', '#4B5563']}
+                      style={styles.iconGradient}
+                    >
+                      <Ionicons name="time" size={16} color="#fff" />
+                    </LinearGradient>
+                    <Text style={styles.cardTitle}>Recent Detections</Text>
+                    <TouchableOpacity onPress={clearHistory}>
+                      <Text style={styles.clearText}>Clear All</Text>
+                    </TouchableOpacity>
+                  </View>
                   
-                  {renderSettingItem(
-                    'notifications',
-                    'Notifications',
-                    'Receive app notifications and updates',
-                    notifications,
-                    setNotifications
-                  )}
+                  <ScrollView style={styles.historyList} nestedScrollEnabled={true}>
+                    {detectionHistory.slice(0, 10).map((object, index) => (
+                      <LinearGradient
+                        key={`${object.id}-${index}`}
+                        colors={['rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0.3)']}
+                        style={styles.historyItem}
+                      >
+                        <View style={styles.historyLeft}>
+                          <Ionicons name="time" size={14} color="#6B7280" />
+                          <Text style={styles.historyTime}>{object.timestamp}</Text>
+                        </View>
+                        
+                        <View style={styles.historyRight}>
+                          <Text style={styles.historyObject}>{object.name}</Text>
+                          <LinearGradient
+                            colors={['rgba(30, 64, 175, 0.1)', 'rgba(30, 64, 175, 0.05)']}
+                            style={styles.historyConfidenceContainer}
+                          >
+                            <Text style={styles.historyConfidence}>
+                              {Math.round(object.confidence * 100)}%
+                            </Text>
+                          </LinearGradient>
+                        </View>
+                      </LinearGradient>
+                    ))}
+                  </ScrollView>
                 </View>
-              </View>
-            </BlurView>
-          </Animated.View>
+              </BlurView>
+            </Animated.View>
+          )}
 
-          {/* System Settings */}
+          {/* Detection Tips */}
           <Animated.View style={[
-            settingsStyles.cardContainer,
+            styles.cardContainer,
             {
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }]
             }
           ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={settingsStyles.card}>
-                <View style={settingsStyles.cardHeader}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
                   <LinearGradient
                     colors={['#F59E0B', '#D97706']}
-                    style={settingsStyles.iconGradient}
+                    style={styles.iconGradient}
                   >
-                    <Ionicons name="construct" size={16} color="#fff" />
+                    <Ionicons name="bulb" size={16} color="#fff" />
                   </LinearGradient>
-                  <Text style={settingsStyles.cardTitle}>System</Text>
+                  <Text style={styles.cardTitle}>Detection Tips</Text>
                 </View>
-                
-                <View style={settingsStyles.settingsList}>
-                  {renderSettingItem(
-                    'battery-charging',
-                    'Battery Optimization',
-                    'Optimize performance to save battery',
-                    batteryOptimization,
-                    setBatteryOptimization
-                  )}
-                  
-                  {renderSettingItem(
-                    'moon',
-                    'Dark Mode',
-                    'Use dark theme for better visibility',
-                    darkMode,
-                    setDarkMode
-                  )}
-                </View>
-              </View>
-            </BlurView>
-          </Animated.View>
-
-          {/* Action Buttons */}
-          <Animated.View style={[
-            settingsStyles.cardContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={settingsStyles.card}>
-                <View style={settingsStyles.actionButtons}>
-                  <Animated.View style={[{ transform: [{ scale: saveButtonScale }] }]}>
-                    <TouchableOpacity
-                      style={settingsStyles.primaryButton}
-                      onPress={handleSaveSettings}
-                      activeOpacity={0.8}
-                      {...createHoverAnimation(saveButtonScale)}
+                <View style={styles.tipsList}>
+                  {[
+                    { icon: 'sunny', text: 'Better lighting improves detection accuracy', colors: ['#F59E0B', '#D97706'] },
+                    { icon: 'walk', text: 'Move slowly for more accurate results', colors: ['#10B981', '#059669'] },
+                    { icon: 'volume-high', text: 'Use voice announcements for hands-free operation', colors: ['#8B5CF6', '#7C3AED'] }
+                  ].map((tip, index) => (
+                    <LinearGradient
+                      key={index}
+                      colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.4)']}
+                      style={styles.tipItem}
                     >
                       <LinearGradient
-                        colors={['#10B981', '#059669']}
-                        style={settingsStyles.primaryButtonGradient}
+                        colors={tip.colors}
+                        style={styles.tipIconContainer}
                       >
-                        <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-                        <Text style={settingsStyles.primaryButtonText}>Save Settings</Text>
+                        <Ionicons name={tip.icon} size={20} color="#fff" />
                       </LinearGradient>
-                    </TouchableOpacity>
-                  </Animated.View>
-
-                  <Animated.View style={[{ transform: [{ scale: resetButtonScale }] }]}>
-                    <TouchableOpacity 
-                      style={settingsStyles.secondaryButton}
-                      onPress={handleResetSettings}
-                      {...createHoverAnimation(resetButtonScale)}
-                    >
-                      <LinearGradient
-                        colors={['rgba(239, 68, 68, 0.1)', 'rgba(220, 38, 38, 0.1)']}
-                        style={settingsStyles.secondaryButtonGradient}
-                      >
-                        <Ionicons name="refresh" size={18} color="#EF4444" />
-                        <Text style={[settingsStyles.secondaryButtonText, { color: '#EF4444' }]}>Reset to Default</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </Animated.View>
-                </View>
-              </View>
-            </BlurView>
-          </Animated.View>
-
-          {/* App Information */}
-          <Animated.View style={[
-            settingsStyles.cardContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}>
-            <BlurView intensity={80} style={settingsStyles.blurContainer}>
-              <View style={settingsStyles.card}>
-                <View style={settingsStyles.cardHeader}>
-                  <LinearGradient
-                    colors={['#6B7280', '#4B5563']}
-                    style={settingsStyles.iconGradient}
-                  >
-                    <Ionicons name="information-circle" size={16} color="#fff" />
-                  </LinearGradient>
-                  <Text style={settingsStyles.cardTitle}>About</Text>
-                </View>
-                
-                <View style={settingsStyles.aboutSection}>
-                  <LinearGradient
-                    colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.4)']}
-                    style={settingsStyles.aboutItem}
-                  >
-                    <Text style={settingsStyles.aboutLabel}>App Version</Text>
-                    <Text style={settingsStyles.aboutValue}>1.0.0</Text>
-                  </LinearGradient>
-                  
-                  <LinearGradient
-                    colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.4)']}
-                    style={settingsStyles.aboutItem}
-                  >
-                    <Text style={settingsStyles.aboutLabel}>Device Model</Text>
-                    <Text style={settingsStyles.aboutValue}>{deviceInfo.name}</Text>
-                  </LinearGradient>
-                  
-                  <LinearGradient
-                    colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.4)']}
-                    style={settingsStyles.aboutItem}
-                  >
-                    <Text style={settingsStyles.aboutLabel}>Firmware</Text>
-                    <Text style={settingsStyles.aboutValue}>{deviceInfo.version}</Text>
-                  </LinearGradient>
+                      <Text style={styles.tipText}>{tip.text}</Text>
+                    </LinearGradient>
+                  ))}
                 </View>
               </View>
             </BlurView>
@@ -626,3 +667,4 @@ export default function SettingsScreen() {
     </>
   );
 }
+
